@@ -6,10 +6,10 @@ import speech_recognition as sr
 from groq import Groq
 
 # Replace these with your own values
-API_ID = '4680197'
-API_HASH = '495b0228624028d635bd748b22985f67'
-BOT_TOKEN = '6086267913:AAHLavNglgsuUcsMain9k6bVIQpxpkLmDKk'
-GROQ_API_KEY = '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'
+API_ID = os.environ.get('API_ID')
+API_HASH = os.environ.get('API_HASH')
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
 system_prompt = "You are a very talented and creative Summarizer, Summarize this article for me."
 
 # Initialize the Telegram client
