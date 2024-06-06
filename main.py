@@ -143,7 +143,7 @@ async def handle_message(event):
 
 async def main():
     await client.start(bot_token=BOT_TOKEN)
-    print("Bot is running...")
+    print("Bot is running...\nHit 🌟 on github repo if you liked my work and please follow on github for more such repos.")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
