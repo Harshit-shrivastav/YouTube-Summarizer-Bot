@@ -82,7 +82,7 @@ async def handle_message(event):
                 await x.edit('Captions found and downloaded. Summarizing the text...')
 
                 summary = await get_groq_response(transcript_text, system_prompt)
-                await x.edit(f'Summary: {summary}')
+                await x.edit(f'Summary: `{summary}`')
             else:
                 # No transcript available, fallback to audio transcription
                 await x.edit('No captions found. Downloading audio from the YouTube video...')
@@ -115,7 +115,7 @@ async def handle_message(event):
                             # Summarize the transcribed text
                             await x.edit('Summarizing the text...')
                             summary = await get_groq_response(text, system_prompt)
-                            print(f"Summary: {summary}")
+                            print(f"Summary: `{summary}`")
                             await x.edit(f'Summary: `{summary}`')
                         except sr.RequestError:
                             print("API unavailable.")
