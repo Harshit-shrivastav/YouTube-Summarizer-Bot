@@ -14,7 +14,7 @@ API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-system_prompt = "You are a very talented and creative Summarizer, Summarize this article for me."
+system_prompt = "You are a very talented and creative Summarizer, Summarize this article for me also don't say anything like 'Summary: Here's a summarized version of the video:', only send the summary text."
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH)
@@ -71,7 +71,7 @@ async def handle_message(event):
 
     # Check if the message is a YouTube link
     if 'youtube.com' in url or 'youtu.be' in url:
-        await event.reply('Attempting to download captions from the YouTube video...')
+        x = await event.reply('Attempting to download captions from the YouTube video...')
         print("Attempting to download captions from YouTube...")
 
         try:
@@ -79,13 +79,13 @@ async def handle_message(event):
             transcript_text = await extract_youtube_transcript(url)
             if transcript_text != "no transcript":
                 print("Transcript fetched successfully.")
-                await event.reply('Captions found and downloaded. Summarizing the text...')
+                await x.edit('Captions found and downloaded. Summarizing the text...')
 
                 summary = await get_groq_response(transcript_text, system_prompt)
-                await event.reply(f'Summary: {summary}')
+                await x.edit(f'Summary: {summary}')
             else:
                 # No transcript available, fallback to audio transcription
-                await event.reply('No captions found. Downloading audio from the YouTube video...')
+                await x.edit('No captions found. Downloading audio from the YouTube video...')
                 print("No captions found. Downloading audio from YouTube...")
 
                 loop = asyncio.get_event_loop()
@@ -94,7 +94,7 @@ async def handle_message(event):
                 output_file = await loop.run_in_executor(None, audio_stream.download, 'audio.mp4')
                 print(f"Downloaded audio to {output_file}")
 
-                await event.reply('Converting audio to text...')
+                await x.edit('Converting audio to text...')
                 print("Converting audio to text...")
 
                 # Convert audio to WAV format
@@ -113,19 +113,19 @@ async def handle_message(event):
                             print(f"Transcribed text: {text}")
 
                             # Summarize the transcribed text
-                            await event.reply('Summarizing the text...')
+                            await x.edit('Summarizing the text...')
                             summary = await get_groq_response(text, system_prompt)
                             print(f"Summary: {summary}")
-                            await event.reply(f'Summary: {summary}')
+                            await x.edit(f'Summary: `{summary}`')
                         except sr.RequestError:
                             print("API unavailable.")
-                            await event.reply('API unavailable.')
+                            await x.edit('API unavailable.')
                         except sr.UnknownValueError:
                             print("Unable to recognize speech.")
-                            await event.reply('Unable to recognize speech.')
+                            await x.edit('Unable to recognize speech.')
                 except Exception as e:
                     print(f"Error during transcription: {str(e)}")
-                    await event.reply(f'Error during transcription: {str(e)}')
+                    await x.edit(f'Error during transcription: {str(e)}')
                 finally:
                     # Clean up files
                     if os.path.exists(output_file):
@@ -136,7 +136,7 @@ async def handle_message(event):
                         print(f"Deleted file: {wav_file}")
         except Exception as e:
             print(f"Error: {str(e)}")
-            await event.reply(f'Error: {str(e)}')
+            await x.edit(f'Error: {str(e)}')
     else:
         print("Invalid YouTube link.")
         await event.reply('Please send a valid YouTube link.')
