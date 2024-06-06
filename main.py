@@ -3,6 +3,7 @@ import asyncio
 from telethon import TelegramClient, events
 from pytube import YouTube
 import speech_recognition as sr
+from pydub import AudioSegment
 from groq import Groq
 
 # Replace these with your own values
@@ -41,7 +42,7 @@ async def get_groq_response(user_prompt, system_prompt):
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    await event.reply('Send me a YouTube link, and I will summaries that video for you in text format.')
+    await event.reply('Send me a YouTube link, and I will summarize that video for you in text format.')
 
 @client.on(events.NewMessage)
 async def handle_message(event):
@@ -78,9 +79,15 @@ async def handle_message(event):
                 await event.reply('Converting audio to text...')
                 print("Converting audio to text...")
 
-                # Convert audio to text
+                # Convert audio to WAV format
                 try:
-                    with sr.AudioFile(output_file) as source:
+                    audio = AudioSegment.from_file(output_file)
+                    wav_file = "audio.wav"
+                    audio.export(wav_file, format="wav")
+                    print(f"Converted audio to {wav_file}")
+
+                    # Convert audio to text
+                    with sr.AudioFile(wav_file) as source:
                         recognizer.adjust_for_ambient_noise(source)
                         audio_data = recognizer.record(source)
                         try:
@@ -106,6 +113,9 @@ async def handle_message(event):
                     if os.path.exists(output_file):
                         os.remove(output_file)
                         print(f"Deleted file: {output_file}")
+                    if os.path.exists(wav_file):
+                        os.remove(wav_file)
+                        print(f"Deleted file: {wav_file}")
         except Exception as e:
             print(f"Error: {str(e)}")
             await event.reply(f'Error: {str(e)}')
