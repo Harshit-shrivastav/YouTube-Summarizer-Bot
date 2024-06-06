@@ -39,7 +39,7 @@ Welcome to the YouTube Video Summarizer Bot! This bot helps you to get a quick s
 1. Start the bot:
 
     ```bash
-    python bot.py
+    python3 main.py
     ```
 
 2. Open Telegram and start a chat with your bot.
