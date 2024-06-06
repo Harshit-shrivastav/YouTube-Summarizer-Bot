@@ -41,7 +41,7 @@ async def get_groq_response(user_prompt, system_prompt):
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    await event.reply('Send me a YouTube link, and I will convert its audio to text.')
+    await event.reply('Send me a YouTube link, and I will summaries that video for you in text format.')
 
 @client.on(events.NewMessage)
 async def handle_message(event):
