@@ -6,14 +6,14 @@ import speech_recognition as sr
 from groq import Groq
 
 # Replace these with your own values
-api_id = '4680197'
-api_hash = '495b0228624028d635bd748b22985f67'
-bot_token = '6086267913:AAHLavNglgsuUcsMain9k6bVIQpxpkLmDKk'
+API_ID = '4680197'
+API_HASH = '495b0228624028d635bd748b22985f67'
+BOT_TOKEN = '6086267913:AAHLavNglgsuUcsMain9k6bVIQpxpkLmDKk'
 GROQ_API_KEY = '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'
 system_prompt = "You are a very talented and creative Summarizer, Summarize this article for me."
 
 # Initialize the Telegram client
-client = TelegramClient('bot', api_id, api_hash)
+client = TelegramClient('bot', API_ID, API_HASH)
 
 # Speech recognizer
 recognizer = sr.Recognizer()
@@ -114,7 +114,7 @@ async def handle_message(event):
         await event.reply('Please send a valid YouTube link.')
 
 async def main():
-    await client.start(bot_token=bot_token)
+    await client.start(bot_token=BOT_TOKEN)
     print("Bot is running...")
     await client.run_until_disconnected()
 
