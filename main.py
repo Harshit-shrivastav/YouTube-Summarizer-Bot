@@ -1,10 +1,13 @@
 import os
+import re
 import asyncio
 from telethon import TelegramClient, events
 from pytube import YouTube
 import speech_recognition as sr
 from pydub import AudioSegment
 from groq import Groq
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import JSONFormatter
 
 # Replace these with your own values
 API_ID = os.environ.get('API_ID')
@@ -18,6 +21,21 @@ client = TelegramClient('bot', API_ID, API_HASH)
 
 # Speech recognizer
 recognizer = sr.Recognizer()
+
+async def extract_youtube_transcript(youtube_url):
+    try:
+        video_id_match = re.search(r"(?<=v=)[^&]+|(?<=youtu.be/)[^?|\n]+", youtube_url)
+        video_id = video_id_match.group(0) if video_id_match else None
+        if video_id is None:
+            return "no transcript"
+        loop = asyncio.get_event_loop()
+        transcript_list = await loop.run_in_executor(None, YouTubeTranscriptApi.list_transcripts, video_id)
+        transcript = transcript_list.find_transcript(['en', 'ja', 'ko', 'de', 'fr', 'ru', 'it', 'es', 'pl', 'uk', 'nl', 'zh-TW', 'zh-CN', 'zh-Hant', 'zh-Hans'])
+        transcript_text = ' '.join([item['text'] for item in transcript.fetch()])
+        return transcript_text
+    except Exception as e:
+        print(f"Error: {e}")
+        return "no transcript"
 
 async def get_groq_response(user_prompt, system_prompt):
     try:
@@ -47,6 +65,8 @@ async def start(event):
 @client.on(events.NewMessage)
 async def handle_message(event):
     url = event.message.message
+    if event.message.text.startswith('/start'):
+        return
     print(f"Received URL: {url}")
 
     # Check if the message is a YouTube link
@@ -55,25 +75,23 @@ async def handle_message(event):
         print("Attempting to download captions from YouTube...")
 
         try:
-            yt = YouTube(url)
-            captions = yt.captions
-            caption = captions.get_by_language_code('en')
-
-            if caption:
-                # Captions are available, use them
-                caption_srt = caption.generate_srt_captions()
-                print("Captions downloaded successfully.")
+            # Try to get the transcript first
+            transcript_text = await extract_youtube_transcript(url)
+            if transcript_text != "no transcript":
+                print("Transcript fetched successfully.")
                 await event.reply('Captions found and downloaded. Summarizing the text...')
 
-                summary = await get_groq_response(caption_srt, system_prompt)
+                summary = await get_groq_response(transcript_text, system_prompt)
                 await event.reply(f'Summary: {summary}')
             else:
-                # Captions not available, fallback to audio transcription
+                # No transcript available, fallback to audio transcription
                 await event.reply('No captions found. Downloading audio from the YouTube video...')
                 print("No captions found. Downloading audio from YouTube...")
 
+                loop = asyncio.get_event_loop()
+                yt = await loop.run_in_executor(None, YouTube, url)
                 audio_stream = yt.streams.filter(only_audio=True).first()
-                output_file = audio_stream.download(filename='audio.mp4')
+                output_file = await loop.run_in_executor(None, audio_stream.download, 'audio.mp4')
                 print(f"Downloaded audio to {output_file}")
 
                 await event.reply('Converting audio to text...')
