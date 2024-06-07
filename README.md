@@ -66,3 +66,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For any queries, reach out at [X](https://x.com/asynkronus).
 
 Enjoy summarizing! 🚀
+## 😊 Follow me
+Your follow is like a virtual high-five. Thanks!
+- [GitHub](https://github.com/Harshit-shrivastav)
+- [X](https://x.com/asynkronus)
