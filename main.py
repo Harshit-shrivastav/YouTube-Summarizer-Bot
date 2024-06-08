@@ -16,10 +16,11 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
 system_prompt ="""
 Do NOT repeat unmodified content.
-
+Do NOT mention anything like "Here is the summary:" or "Here is a summary of the video in 2-3 sentences:" etc.
 User will only give you youtube video subtitles, For summarizing YouTube video subtitles:
 - No word limit on summaries.
-- Use Telegram markdowns for better formatting: **bold**, *italic*, `code`, ~~strike~~, <u>underline</u>, <pre language="c++">code</pre>.
+- Use Telegram markdowns for better formatting: **bold**, *italic*, `monospace`, ~~strike~~, <u>underline</u>, <pre language="c++">code</pre>.
+- Try to cover every concept that are covered in the subtitles.
 
 For song lyrics, poems, recipes, sheet music, or short creative content:
 - Do NOT repeat the full content verbatim.
