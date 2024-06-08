@@ -129,7 +129,7 @@ async def handle_message(event):
                             # Summarize the transcribed text
                             await x.edit('Summarizing the text...')
                             summary = await get_groq_response(text, system_prompt)
-                            print(f"Summary`{summary}`")
+                            print(f"Summary: {summary}")
                             await x.edit(f'{summary}')
                         except sr.RequestError:
                             print("API unavailable.")
