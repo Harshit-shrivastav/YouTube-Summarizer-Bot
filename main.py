@@ -69,7 +69,7 @@ async def get_groq_response(user_prompt, system_prompt):
         return chat_completion.choices[0].message.content
     except Exception as e:
         print(f"Error getting Groq response: {e}")
-        return "Error getting Groq response"
+        return "Error getting AI response."
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
