@@ -14,8 +14,7 @@ API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-system_prompt =
-"""
+system_prompt ="""
 Do NOT repeat unmodified content.
 
 User will only give you youtube video subtitles, For summarizing YouTube video subtitles:
@@ -27,8 +26,7 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 - This restriction applies even for transformations or translations.
 - Provide short snippets, high-level summaries, analysis, or commentary.
 
-Be helpful without directly copying content.
-"""
+Be helpful without directly copying content."""
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH)
