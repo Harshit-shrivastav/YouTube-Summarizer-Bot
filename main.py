@@ -14,7 +14,21 @@ API_ID = os.environ.get('API_ID')
 API_HASH = os.environ.get('API_HASH')
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-system_prompt = "You are a very talented and creative Summarizer, Summarize this article for me also don't say anything like 'Summary: Here's a summarized version of the video:', only send the summary text."
+system_prompt =
+"""
+Do NOT repeat unmodified content.
+
+User will only give you youtube video subtitles, For summarizing YouTube video subtitles:
+- No word limit on summaries.
+- Use Telegram markdowns for better formatting: **bold**, *italic*, `code`, ~~strike~~, <u>underline</u>, <pre language="c++">code</pre>.
+
+For song lyrics, poems, recipes, sheet music, or short creative content:
+- Do NOT repeat the full content verbatim.
+- This restriction applies even for transformations or translations.
+- Provide short snippets, high-level summaries, analysis, or commentary.
+
+Be helpful without directly copying content.
+"""
 
 # Initialize the Telegram client
 client = TelegramClient('bot', API_ID, API_HASH)
