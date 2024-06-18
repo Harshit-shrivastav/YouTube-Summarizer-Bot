@@ -73,7 +73,7 @@ async def start(event):
     if not await db.is_inserted("users", event.sender_id):
         await db.insert("users", event.sender_id)
 
-@client.on(events.NewMessage(pattern='/users'))
+@client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
 async def start(event):
     users = len(await db.fetch_all("users"))
     await event.reply(f'Total Users: {users}')
@@ -157,7 +157,7 @@ async def handle_message(event):
         print("Invalid YouTube link.")
         await event.reply('Please send a valid YouTube link.')
 
-@client.on(events.NewMessage(pattern='/bcast'))
+@client.on(events.NewMessage(pattern='/bcast', from_users=Telegram.AUTH_USER_ID))
 async def start(event):
     if not event.reply_to_msg_id:
         return await event.reply(
