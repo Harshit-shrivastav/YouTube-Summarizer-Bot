@@ -32,6 +32,9 @@ Welcome to the YouTube Video Summarizer Bot! This bot helps you to get a quick s
     export API_HASH='your_telegram_api_hash'
     export BOT_TOKEN='your_telegram_bot_token'
     export GROQ_API_KEY='your_groq_api_key'
+    export AUTH_USER_ID='your_telegram_user_id'
+    export REDIS_URI='your_redis_uri'
+    export REDIS_PASSWORD='your_redis_password'
     ```
 
 ## 🛠️ Usage
