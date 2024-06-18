@@ -9,6 +9,7 @@ from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import JSONFormatter
 from config import Telegram, Ai
+from database import db
 
 system_prompt ="""
 Do NOT repeat unmodified content.
