@@ -27,7 +27,7 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 Be helpful without directly copying content."""
 
 # Initialize the Telegram client
-client = TelegramClient('bot', API_ID, API_HASH)
+client = TelegramClient('bot', Telegram.API_ID, Telegram.API_HASH)
 
 # Speech recognizer
 recognizer = sr.Recognizer()
@@ -49,7 +49,7 @@ async def extract_youtube_transcript(youtube_url):
 
 async def get_groq_response(user_prompt, system_prompt):
     try:
-        client = Groq(api_key=GROQ_API_KEY)
+        client = Groq(api_key=Ai.GROQ_API_KEY)
         chat_completion = client.chat.completions.create(
             messages=[
                 {
@@ -184,7 +184,7 @@ async def start(event):
     await xx.edit(f"Broadcast completed.\nSuccess: {done}\nFailed: {error}")
     
 async def main():
-    await client.start(bot_token=BOT_TOKEN)
+    await client.start(bot_token=Telegram.BOT_TOKEN)
     print("Bot is running...\nHit 🌟 on github repo if you liked my work and please follow on github for more such repos.")
     await client.run_until_disconnected()
 
