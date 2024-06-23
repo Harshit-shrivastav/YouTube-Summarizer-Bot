@@ -75,9 +75,12 @@ async def start(event):
         await db.insert("users", event.sender_id)
 
 @client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
-async def start(event):
-    users = len(await db.fetch_all("users"))
-    await event.reply(f'Total Users: {users}')
+async def users(event):
+    try:
+        users = len(await db.fetch_all("users"))
+        await event.reply(f'Total Users: {users}')
+    except Exception as e:
+        print(e)
 
 @client.on(events.NewMessage)
 async def handle_message(event):
