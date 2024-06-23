@@ -162,7 +162,7 @@ async def handle_message(event):
         await event.reply('Please send a valid YouTube link.')
 
 @client.on(events.NewMessage(pattern='/bcast', from_users=Telegram.AUTH_USER_ID))
-async def start(event):
+async def bcast(event):
     if not event.reply_to_msg_id:
         return await event.reply(
             "Please use `/bcast` as reply to the message you want to broadcast."
