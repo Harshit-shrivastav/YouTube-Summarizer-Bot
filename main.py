@@ -71,8 +71,8 @@ async def get_groq_response(user_prompt, system_prompt):
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
     await event.reply('Send me a YouTube link, and I will summarize that video for you in text format.')
-    if not await db.is_inserted("users", event.sender_id):
-        await db.insert("users", event.sender_id)
+    if not await db.is_inserted("users", int(event.sender_id)):
+        await db.insert("users", int(event.sender_id)) 
 
 @client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
 async def users(event):
