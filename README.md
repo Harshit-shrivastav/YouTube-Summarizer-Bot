@@ -24,8 +24,8 @@ Welcome to the YouTube Video Summarizer Bot! This bot helps you to get a quick s
     ```bash
     pip install -r requirements.txt
     ```
-
-3. Set up environment variables:
+3. Get Free Redis URI and Password here [Redis](https://redis.io/try-free/)
+4. Set up environment variables:
 
     ```bash
     export API_ID='your_telegram_api_id'
