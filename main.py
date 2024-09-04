@@ -160,7 +160,7 @@ async def handle_message(event):
     else:
         print("Invalid YouTube link.")
         await event.reply('Please send a valid YouTube link.')
-"""
+
 @client.on(events.NewMessage(pattern='/bcast', from_users=Telegram.AUTH_USER_ID))
 async def bcast(event):
     if not event.reply_to_msg_id:
@@ -185,7 +185,7 @@ async def bcast(event):
             log.error("Broadcast error:\nChat: %d\nError: %s", int(user_id), brd_er)
             error += 1
     await xx.edit(f"Broadcast completed.\nSuccess: {done}\nFailed: {error}")
-"""
+    
 async def main():
     await client.start(bot_token=Telegram.BOT_TOKEN)
     print("Bot is running...\nHit 🌟 on github repo if you liked my work and please follow on github for more such repos.")
