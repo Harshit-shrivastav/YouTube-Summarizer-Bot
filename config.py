@@ -1,7 +1,7 @@
 import os
 
 class Telegram:
-    API_ID = os.environ.get('API_ID')
+    API_ID = int(os.environ.get('API_ID'))
     API_HASH = os.environ.get('API_HASH')
     BOT_TOKEN = os.environ.get('BOT_TOKEN')
     AUTH_USER_ID = int(os.environ.get('AUTH_USER_ID'))
