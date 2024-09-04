@@ -169,7 +169,7 @@ async def bcast(event):
     done = error = 0
     for user_id in users:
         try:
-            await TelegramBot.send_message(
+            await client.send_message(
                 int(user_id),
                 msg.text.format(user=(await TelegramBot.get_entity(int(user_id))).first_name),
                 file=msg.media,
