@@ -82,16 +82,14 @@ async def users(event):
     except Exception as e:
         print(e)
 
-@client.on(events.NewMessage)
+@client.on(events.NewMessage(func=lambda e: e.is_private and not e.text.startswith('/'), pattern=r'(?!^/).*'))
 async def handle_message(event):
     url = event.message.message
-    if event.message.text.startswith('/start'):
-        return
     print(f"Received URL: {url}")
 
     # Check if the message is a YouTube link
     if 'youtube.com' in url or 'youtu.be' in url:
-        x = await event.reply('Attempting to download captions from the YouTube video...')
+        x = await event.reply('Reading the video...')
         print("Attempting to download captions from YouTube...")
 
         try:
@@ -99,22 +97,20 @@ async def handle_message(event):
             transcript_text = await extract_youtube_transcript(url)
             if transcript_text != "no transcript":
                 print("Transcript fetched successfully.")
-                await x.edit('Captions found and downloaded. Summarizing the text...')
-
+                await x.edit('Reading Completed, Summarizing it...')
                 summary = await get_groq_response(transcript_text, system_prompt)
                 await x.edit(f'{summary}')
             else:
                 # No transcript available, fallback to audio transcription
-                await x.edit('No captions found. Downloading audio from the YouTube video...')
+                await x.edit("Failed to read Video, Trying to listen the video's audio...")
                 print("No captions found. Downloading audio from YouTube...")
-
                 loop = asyncio.get_event_loop()
                 yt = await loop.run_in_executor(None, YouTube, url)
                 audio_stream = yt.streams.filter(only_audio=True).first()
                 output_file = await loop.run_in_executor(None, audio_stream.download, 'audio.mp4')
                 print(f"Downloaded audio to {output_file}")
 
-                await x.edit('Converting audio to text...')
+                await x.edit('Just a bit...')
                 print("Converting audio to text...")
 
                 # Convert audio to WAV format
@@ -133,7 +129,7 @@ async def handle_message(event):
                             print(f"Transcribed text: {text}")
 
                             # Summarize the transcribed text
-                            await x.edit('Summarizing the text...')
+                            await x.edit('Summarizing it...')
                             summary = await get_groq_response(text, system_prompt)
                             print(f"Summary: {summary}")
                             await x.edit(f'{summary}')
@@ -145,7 +141,7 @@ async def handle_message(event):
                             await x.edit('Unable to recognize speech.')
                 except Exception as e:
                     print(f"Error during transcription: {str(e)}")
-                    await x.edit(f'Error during transcription: {str(e)}')
+                    await x.edit(f'Error while listening the audio: {str(e)}')
                 finally:
                     # Clean up files
                     if os.path.exists(output_file):
