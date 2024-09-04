@@ -178,7 +178,7 @@ async def bcast(event):
             )
             done += 1
         except Exception as brd_er:
-            log.error("Broadcast error:\nChat: %d\nError: %s", int(user_id), brd_er)
+            print("Broadcast error:\nChat: %d\nError: %s", int(user_id), brd_er)
             error += 1
     await xx.edit(f"Broadcast completed.\nSuccess: {done}\nFailed: {error}")
     
