@@ -171,7 +171,7 @@ async def bcast(event):
         try:
             await client.send_message(
                 int(user_id),
-                msg.text.format(user=(await TelegramBot.get_entity(int(user_id))).first_name),
+                msg.text.format(user=(await client.get_entity(int(user_id))).first_name),
                 file=msg.media,
                 buttons=msg.buttons,
                 link_preview=False,
