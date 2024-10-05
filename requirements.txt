@@ -6,3 +6,4 @@ pytube
 pydub
 youtube_transcript_api
 redis
+python-dotenv
