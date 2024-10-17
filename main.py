@@ -2,6 +2,7 @@ import os
 import re
 import asyncio
 from telethon import TelegramClient, events
+from telethon.tl.custom import Button
 from pytube import YouTube
 import speech_recognition as sr
 from pydub import AudioSegment
@@ -70,9 +71,14 @@ async def get_groq_response(user_prompt, system_prompt):
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    await event.reply('Send me a YouTube link, and I will summarize that video for you in text format.')
+    source_button = Button.url("View Source Code", "https://github.com/Harshit-shrivastav/YouTube-Summarizer-Bot")
+    await event.reply(
+        'Send me a YouTube link, and I will summarize that video for you in text format.',
+        buttons=source_button
+    )
     if not await db.is_inserted("users", int(event.sender_id)):
-        await db.insert("users", int(event.sender_id)) 
+        await db.insert("users", int(event.sender_id))
+                
 
 @client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
 async def users(event):
