@@ -11,7 +11,8 @@ Welcome to the YouTube Video Summarizer Bot! This bot helps you to get a quick s
 - **🤖 Easy to Use**: Simple commands to interact with the bot.
 
 ## 🔧 Installation
-
+# ⭐ Star the Repo
+  
 1. Clone the repository:
 
     ```bash
