@@ -11,7 +11,9 @@ class Telegram:
     
 class Ai:
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-
+    CF_API_KEY = os.environ.get('CF_API_KEY')
+    CF_ACCOUNT_ID = os.environ.get('CF_ACCOUNT_ID')
+    
 class Database:
     REDIS_URI = os.environ.get('REDIS_URI')
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')
