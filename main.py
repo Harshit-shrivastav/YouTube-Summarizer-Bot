@@ -48,6 +48,17 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
+def get_cfai_response(account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct", system_prompt, user_prompt):
+    response = requests.post(
+        f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_name}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+        json={"messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]}
+    )
+    return response.json().get('result', {}).get('response')
+
 async def get_groq_response(user_prompt, system_prompt):
     try:
         client = Groq(api_key=Ai.GROQ_API_KEY)
@@ -104,7 +115,13 @@ async def handle_message(event):
             if transcript_text != "no transcript":
                 print("Transcript fetched successfully.")
                 await x.edit('Reading Completed, Summarizing it...')
-                summary = await get_groq_response(transcript_text, system_prompt)
+                summary = None 
+                if Ai.GROQ_API_KEY:
+                    summary = await get_groq_response(transcript_text, system_prompt)
+                elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
+                    summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
+                else:
+                    print("No AI API Key Found!")
                 await x.edit(f'{summary}')
             else:
                 # No transcript available, fallback to audio transcription
