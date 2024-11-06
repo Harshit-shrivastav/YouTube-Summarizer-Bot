@@ -49,10 +49,16 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
-def fetch_response(user_prompt: str, system_prompt: str):
+import requests
+
+def fetch_answer(user_prompt: str, system_prompt: str):
     url = 'https://llm.h-s.site'
+    payload = {
+        "system": system_content,
+        "user": user_content
+    }
     try:
-        response = requests.get(f"{url}?system={system_prompt}&user={user_prompt}")
+        response = requests.post(url, json=payload)
         response.raise_for_status()
         data = response.json()
         return data[0].get('response', {}).get('response', "Unexpected response format.")
