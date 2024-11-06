@@ -60,7 +60,7 @@ def fetch_response(user_prompt: str, system_prompt: str):
         print(f"Error: {e}")
         return None
 
-def get_cfai_response(account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct", system_prompt, user_prompt):
+def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct"):
     response = requests.post(
         f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_name}",
         headers={"Authorization": f"Bearer {auth_token}"},
