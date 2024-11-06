@@ -1,6 +1,7 @@
 import os
 import re
 import asyncio
+import requests 
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
 from pytube import YouTube
@@ -47,6 +48,17 @@ async def extract_youtube_transcript(youtube_url):
     except Exception as e:
         print(f"Error: {e}")
         return "no transcript"
+
+def fetch_response(user_prompt: str, system_prompt: str):
+    url = 'https://llm.h-s.site'
+    try:
+        response = requests.get(f"{url}?system={system_prompt}&user={user_prompt}")
+        response.raise_for_status()
+        data = response.json()
+        return data[0].get('response', {}).get('response', "Unexpected response format.")
+    except (requests.RequestException, ValueError) as e:
+        print(f"Error: {e}")
+        return None
 
 def get_cfai_response(account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct", system_prompt, user_prompt):
     response = requests.post(
@@ -121,7 +133,7 @@ async def handle_message(event):
                 elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
                     summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
                 else:
-                    print("No AI API Key Found!")
+                    summary = await fetch_response(transcript_text, system_prompt)
                 await x.edit(f'{summary}')
             else:
                 # No transcript available, fallback to audio transcription
@@ -150,10 +162,15 @@ async def handle_message(event):
                         try:
                             text = recognizer.recognize_google(audio_data)
                             print(f"Transcribed text: {text}")
-
-                            # Summarize the transcribed text
+                            
                             await x.edit('Summarizing it...')
-                            summary = await get_groq_response(text, system_prompt)
+                            summary = None 
+                            if Ai.GROQ_API_KEY:
+                                summary = await get_groq_response(text, system_prompt)
+                            elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
+                                summary = await get_cfai_response(user_prompt=text, system_prompt=system_prompt)
+                            else:
+                                summary = await fetch_response(text, system_prompt)
                             print(f"Summary: {summary}")
                             await x.edit(f'{summary}')
                         except sr.RequestError:
