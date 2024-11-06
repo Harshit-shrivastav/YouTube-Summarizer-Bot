@@ -138,6 +138,7 @@ async def handle_message(event):
                     summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
                 else:
                     summary = await fetch_response(transcript_text, system_prompt)
+                summary = summary.encode("utf-8", "replace").decode("utf-8")
                 await x.edit(f'{summary}')
             else:
                 # No transcript available, fallback to audio transcription
@@ -175,6 +176,7 @@ async def handle_message(event):
                                 summary = await get_cfai_response(user_prompt=text, system_prompt=system_prompt)
                             else:
                                 summary = await fetch_response(text, system_prompt)
+                            summary = summary.encode("utf-8", "replace").decode("utf-8")
                             print(f"Summary: {summary}")
                             await x.edit(f'{summary}')
                         except sr.RequestError:
