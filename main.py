@@ -131,7 +131,7 @@ async def handle_message(event):
             if transcript_text != "no transcript":
                 print("Transcript fetched successfully.")
                 await x.edit('Reading Completed, Summarizing it...')
-                summary = None 
+                summary = ""
                 if Ai.GROQ_API_KEY:
                     summary = await get_groq_response(transcript_text, system_prompt)
                 elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
@@ -168,7 +168,7 @@ async def handle_message(event):
                             print(f"Transcribed text: {text}")
                             
                             await x.edit('Summarizing it...')
-                            summary = None 
+                            summary = ""
                             if Ai.GROQ_API_KEY:
                                 summary = await get_groq_response(text, system_prompt)
                             elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
