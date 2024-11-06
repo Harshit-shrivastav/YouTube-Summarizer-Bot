@@ -49,7 +49,7 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
-def fetch_response(user_prompt: str, system_prompt: str):
+def fetch_response(user_prompt, system_prompt):
     url = 'https://llm.h-s.site'
     payload = {
         "system": system_prompt,
