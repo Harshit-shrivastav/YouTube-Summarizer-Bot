@@ -49,8 +49,6 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
-import requests
-
 def fetch_answer(user_prompt: str, system_prompt: str):
     url = 'https://llm.h-s.site'
     payload = {
