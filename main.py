@@ -52,8 +52,8 @@ async def extract_youtube_transcript(youtube_url):
 def fetch_response(user_prompt: str, system_prompt: str):
     url = 'https://llm.h-s.site'
     payload = {
-        "system": system_content,
-        "user": user_content
+        "system": system_prompt,
+        "user": user_prompt
     }
     try:
         response = requests.post(url, json=payload)
