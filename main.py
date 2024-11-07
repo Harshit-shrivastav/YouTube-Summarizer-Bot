@@ -49,7 +49,7 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
-async def fetch_response(user_prompt, system_prompt):
+def fetch_response(user_prompt, system_prompt):
     url = 'https://llm.h-s.site'
     payload = {
         "system": system_prompt,
@@ -138,11 +138,10 @@ async def handle_message(event):
                     elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
                         summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
                     else:
-                        summary = await fetch_response(transcript_text, system_prompt)
-                    summary = summary.encode("utf-8", "replace").decode("utf-8")
+                        summary = fetch_response(transcript_text, system_prompt)
                     await x.edit(f'{summary}')
                 else:
-                    print("Can't summarise")
+                    print("Can't summarise!")
             else:
                 # No transcript available, fallback to audio transcription
                 await x.edit("Failed to read Video, Trying to listen the video's audio...")
