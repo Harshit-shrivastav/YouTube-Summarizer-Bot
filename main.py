@@ -132,14 +132,17 @@ async def handle_message(event):
                 print("Transcript fetched successfully.")
                 await x.edit('Reading Completed, Summarizing it...')
                 summary = ""
-                if Ai.GROQ_API_KEY:
-                    summary = await get_groq_response(transcript_text, system_prompt)
-                elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
-                    summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
+                if summary:
+                    if Ai.GROQ_API_KEY:
+                        summary = await get_groq_response(transcript_text, system_prompt)
+                    elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
+                        summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
+                    else:
+                        summary = await fetch_response(transcript_text, system_prompt)
+                    summary = summary.encode("utf-8", "replace").decode("utf-8")
+                    await x.edit(f'{summary}')
                 else:
-                    summary = await fetch_response(transcript_text, system_prompt)
-                summary = summary.encode("utf-8", "replace").decode("utf-8")
-                await x.edit(f'{summary}')
+                    print("Can't summarise")
             else:
                 # No transcript available, fallback to audio transcription
                 await x.edit("Failed to read Video, Trying to listen the video's audio...")
