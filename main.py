@@ -144,7 +144,10 @@ async def handle_message(event):
                 elif not Ai.GROQ_API_KEY and not Ai.GROQ_API_KEY and not Ai.CF_ACCOUNT_ID:
                     print(13)
                     summary = fetch_response(transcript_text, system_prompt)
-                    print(summary)
+                    try:
+                        await event.reply(summary)
+                    except Exception as e:
+                        print(e)
                 else:
                     print("Can't Summarize!")
                 print("Summary:", summary)
