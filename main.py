@@ -136,11 +136,15 @@ async def handle_message(event):
                 await x.edit('Reading Completed, Summarizing it...')
                 summary = ""
                 if Ai.GROQ_API_KEY:
+                    print(1)
                     summary = await get_groq_response(transcript_text, system_prompt)
                 elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
+                    print(12)
                     summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
                 elif not Ai.GROQ_API_KEY and not Ai.GROQ_API_KEY and not Ai.CF_ACCOUNT_ID:
+                    print(13)
                     summary = fetch_response(transcript_text, system_prompt)
+                    print(summary)
                 else:
                     print("Can't Summarize!")
                 print("Summary:", summary)
