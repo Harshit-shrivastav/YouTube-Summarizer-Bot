@@ -58,14 +58,18 @@ def fetch_response(user_prompt, system_prompt):
         response = requests.post(url, json=payload)
         response.raise_for_status()
         data = response.json()
-        return data[0].get('response', {}).get('response', "Unexpected response format.")
+        if 'response' in data[0].get('response', {}):
+            return data[0]['response']['response']
+        else:
+            print("Unexpected response format:", data)
+            return "Unexpected response format."
     except (requests.RequestException, ValueError) as e:
         print(f"Error: {e}")
         return "Failed to fetch response!"
     except Exception as e:
         print(e)
         return "Failed to fetch response!"
-
+        
 async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct"):
     response = requests.post(
         f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_name}",
