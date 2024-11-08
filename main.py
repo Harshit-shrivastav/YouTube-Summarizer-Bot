@@ -16,14 +16,13 @@ from database import db
 system_prompt ="""
 Do NOT repeat unmodified content.
 Do NOT mention anything like "Here is the summary:" or "Here is a summary of the video in 2-3 sentences:" etc.
-User will only give you youtube video subtitles, For summarizing YouTube video subtitles:
+User will only give you YouTube video subtitles. For summarizing YouTube video subtitles:
 - No word limit on summaries.
 - Use Telegram markdowns for better formatting: **bold**, *italic*, `monospace`, ~~strike~~, <u>underline</u>, <pre language="c++">code</pre>.
-- Try to cover every concept that are covered in the subtitles.
+- Try to cover every concept covered in the subtitles.
 
 For song lyrics, poems, recipes, sheet music, or short creative content:
 - Do NOT repeat the full content verbatim.
-- This restriction applies even for transformations or translations.
 - Provide short snippets, high-level summaries, analysis, or commentary.
 
 Be helpful without directly copying content."""
@@ -108,7 +107,6 @@ async def start(event):
     )
     if not await db.is_inserted("users", int(event.sender_id)):
         await db.insert("users", int(event.sender_id))
-                
 
 @client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
 async def users(event):
@@ -136,22 +134,18 @@ async def handle_message(event):
                 await x.edit('Reading Completed, Summarizing it...')
                 summary = ""
                 if Ai.GROQ_API_KEY:
-                    print(1)
                     summary = await get_groq_response(transcript_text, system_prompt)
                 elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
-                    print(12)
                     summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
-                elif not Ai.GROQ_API_KEY and not Ai.GROQ_API_KEY and not Ai.CF_ACCOUNT_ID:
-                    print(13)
+                elif not Ai.GROQ_API_KEY and not Ai.CF_API_KEY and not Ai.CF_ACCOUNT_ID:
                     summary = fetch_response(transcript_text, system_prompt)
-                    try:
-                        await event.reply(summary)
-                    except Exception as e:
-                        print(e)
                 else:
                     print("Can't Summarize!")
-                print("Summary:", summary)
-                await x.edit(f'{summary}')
+
+                if summary:
+                    await x.edit(f'{summary}')
+                else:
+                    await x.edit("Error: Empty or invalid response.")
             else:
                 # No transcript available, fallback to audio transcription
                 await x.edit("Failed to read Video, Trying to listen the video's audio...")
@@ -187,10 +181,11 @@ async def handle_message(event):
                             elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
                                 summary = await get_cfai_response(user_prompt=text, system_prompt=system_prompt)
                             else:
-                                summary = await fetch_response(text, system_prompt)
-                            summary = summary.encode("utf-8", "replace").decode("utf-8")
-                            print(f"Summary: {summary}")
-                            await x.edit(f'{summary}')
+                                summary = fetch_response(text, system_prompt)
+                            if summary:
+                                await x.edit(f'{summary}')
+                            else:
+                                await x.edit("Error: Empty or invalid response.")
                         except sr.RequestError:
                             print("API unavailable.")
                             await x.edit('API unavailable.')
@@ -199,7 +194,7 @@ async def handle_message(event):
                             await x.edit('Unable to recognize speech.')
                 except Exception as e:
                     print(f"Error during transcription: {str(e)}")
-                    await x.edit(f'Error while listening the audio: {str(e)}')
+                    await x.edit(f'Error while listening to audio: {str(e)}')
                 finally:
                     # Clean up files
                     if os.path.exists(output_file):
@@ -219,31 +214,18 @@ async def handle_message(event):
 async def bcast(event):
     if not event.reply_to_msg_id:
         return await event.reply(
-            "Please use `/bcast` as reply to the message you want to broadcast."
+            "Please use `/bcast` as a reply to the message you want to broadcast."
         )
     msg = await event.get_reply_message()
-    xx = await event.reply("In progress...")
-    users = await db.fetch_all('users')
-    done = error = 0
-    for user_id in users:
+    xx = await event.reply("Broadcasting...")
+    error_count = 0
+    users = await db.fetch_all("users")
+    for user in users:
         try:
-            await client.send_message(
-                int(user_id),
-                msg.text.format(user=(await client.get_entity(int(user_id))).first_name),
-                file=msg.media,
-                buttons=msg.buttons,
-                link_preview=False,
-            )
-            done += 1
-        except Exception as brd_er:
-            print("Broadcast error:\nChat: %d\nError: %s", int(user_id), brd_er)
-            error += 1
-    await xx.edit(f"Broadcast completed.\nSuccess: {done}\nFailed: {error}")
-    
-async def main():
-    await client.start(bot_token=Telegram.BOT_TOKEN)
-    print("Bot is running...\nHit 🌟 on github repo if you liked my work and please follow on github for more such repos.")
-    await client.run_until_disconnected()
+            await client.send_message(int(user[0]), msg)
+        except Exception:
+            error_count += 1
+    await xx.edit(f"Broadcasted message with {error_count} errors.")
 
-if __name__ == '__main__':
-    asyncio.run(main())
+client.start(bot_token=Telegram.BOT_TOKEN)
+client.run_until_disconnected()
