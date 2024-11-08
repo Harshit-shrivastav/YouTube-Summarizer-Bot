@@ -143,7 +143,7 @@ async def handle_message(event):
                     summary = fetch_response(transcript_text, system_prompt)
                 else:
                     print("Can't Summarize!")
-                print(summary)
+                print("Summary:", summary)
                 await x.edit(f'{summary}')
             else:
                 # No transcript available, fallback to audio transcription
