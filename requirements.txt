@@ -7,3 +7,4 @@ youtube_transcript_api
 redis
 python-dotenv
 requests 
+aiohttp
