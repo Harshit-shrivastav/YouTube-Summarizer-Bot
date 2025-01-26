@@ -60,25 +60,29 @@ async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT
     )
     return response.json().get('result', {}).get('response')
 """
-def fetch_response(api_key: str, user_prompt: str, system_prompt: str):
+async def fetch_response(api_key: str, user_prompt: str, system_prompt: str):
     url = "https://api.arliai.com/v1/chat/completions"
     payload = json.dumps({
         "model": "Mistral-Nemo-12B-Instruct-2407",
-        "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
     })
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f"Bearer {api_key}"
     }
-    response = requests.post(url, headers=headers, data=payload)
-    if response.status_code == 200:
-        try:
-            response_data = response.json()
-            return response_data['choices'][0]['message']['content']  
-        except (json.JSONDecodeError, KeyError):
-            raise Exception("Error decoding API response.")
-    else:
-        raise Exception(f"API Error: {response.status_code} - {response.text}")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, data=payload) as response:
+            if response.status == 200:
+                try:
+                    response_data = await response.json()
+                    return response_data['choices'][0]['message']['content']
+                except (json.JSONDecodeError, KeyError):
+                    raise Exception("Error decoding API response.")
+            else:
+                raise Exception(f"API Error: {response.status} - {await response.text()}")
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
