@@ -72,9 +72,8 @@ class RedisClient:
             return False
 
 # Configuration
-REDIS_URI = Database.REDIS_URI.split(":")
-host = REDIS_URI[0]
-port = int(REDIS_URI[1])
+host = Database.REDIS_HOST
+port = Database.REDIS_PORT
 password = Database.REDIS_PASSWORD
 
 # db Instance 
