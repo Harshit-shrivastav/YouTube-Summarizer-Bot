@@ -1,6 +1,5 @@
 telethon
 SpeechRecognition
-groq
 pytube3
 pytube
 pydub
