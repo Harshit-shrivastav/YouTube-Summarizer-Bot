@@ -9,7 +9,8 @@ class RedisClient:
             host=host,
             port=port,
             password=password,
-            decode_responses=True,
+            ssl=True,
+            decode_responses=True
         )
 
     def s_l(self, text: str) -> List[str]:
