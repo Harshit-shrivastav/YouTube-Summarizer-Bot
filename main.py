@@ -2,12 +2,12 @@ import os
 import re
 import asyncio
 import requests 
+import json
 from telethon import TelegramClient, events
 from telethon.tl.custom import Button
 from pytube import YouTube
 import speech_recognition as sr
 from pydub import AudioSegment
-from groq import Groq
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import JSONFormatter
 from config import Telegram, Ai
@@ -48,28 +48,6 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
-def fetch_response(user_prompt, system_prompt):
-    url = 'https://llm.h-s.site'
-    payload = {
-        "system": system_prompt,
-        "user": user_prompt
-    }
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        if 'response' in data[0].get('response', {}):
-            return data[0]['response']['response']
-        else:
-            print("Unexpected response format:", data)
-            return "Unexpected response format."
-    except (requests.RequestException, ValueError) as e:
-        print(f"Error: {e}")
-        return "Failed to fetch response!"
-    except Exception as e:
-        print(e)
-        return "Failed to fetch response!"
-        
 async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct"):
     response = requests.post(
         f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_name}",
@@ -81,26 +59,25 @@ async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT
     )
     return response.json().get('result', {}).get('response')
 
-async def get_groq_response(user_prompt, system_prompt):
-    try:
-        client = Groq(api_key=Ai.GROQ_API_KEY)
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt,
-                }
-            ],
-            model="llama3-8b-8192",
-        )
-        return chat_completion.choices[0].message.content
-    except Exception as e:
-        print(f"Error getting Groq response: {e}")
-        return "Error getting AI response."
+def fetch_response(api_key: str, user_prompt: str, system_prompt: str):
+    url = "https://api.arliai.com/v1/chat/completions"
+    payload = json.dumps({
+        "model": "Mistral-Nemo-12B-Instruct-2407",
+        "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f"Bearer {api_key}"
+    }
+    response = requests.post(url, headers=headers, data=payload)
+    if response.status_code == 200:
+        try:
+            response_data = response.json()
+            return response_data['choices'][0]['message']['content']  
+        except (json.JSONDecodeError, KeyError):
+            raise Exception("Error decoding API response.")
+    else:
+        raise Exception(f"API Error: {response.status_code} - {response.text}")
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
@@ -129,7 +106,6 @@ async def handle_message(event):
     if 'youtube.com' in url or 'youtu.be' in url:
         x = await event.reply('Reading the video...')
         print("Attempting to download captions from YouTube...")
-
         try:
             # Try to get the transcript first
             transcript_text = await extract_youtube_transcript(url)
@@ -137,15 +113,10 @@ async def handle_message(event):
                 print("Transcript fetched successfully.")
                 await x.edit('Reading Completed, Summarizing it...')
                 summary = ""
-                if Ai.GROQ_API_KEY:
-                    summary = await get_groq_response(transcript_text, system_prompt)
-                elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
-                    summary = await get_cfai_response(user_prompt=transcript_text, system_prompt=system_prompt)
-                elif not Ai.GROQ_API_KEY and not Ai.CF_API_KEY and not Ai.CF_ACCOUNT_ID:
-                    summary = fetch_response(transcript_text, system_prompt)
+                if Ai.ARLIAI_API_KEY:
+                    summary = await fetch_response(Ai.ARLIAI_API_KEY, transcript_text, system_prompt)
                 else:
-                    print("Can't Summarize!")
-
+                    print("Can't Summarize, ARLIAI_API_KEY not found!")
                 if summary:
                     await x.edit(f'{summary}')
                 else:
@@ -160,7 +131,7 @@ async def handle_message(event):
                 output_file = await loop.run_in_executor(None, audio_stream.download, 'audio.mp4')
                 print(f"Downloaded audio to {output_file}")
 
-                await x.edit('Just a bit...')
+                await x.edit('Just a moment...')
                 print("Converting audio to text...")
 
                 # Convert audio to WAV format
@@ -180,12 +151,10 @@ async def handle_message(event):
                             
                             await x.edit('Summarizing it...')
                             summary = ""
-                            if Ai.GROQ_API_KEY:
-                                summary = await get_groq_response(text, system_prompt)
-                            elif not Ai.GROQ_API_KEY and Ai.CF_API_KEY and Ai.CF_ACCOUNT_ID:
-                                summary = await get_cfai_response(user_prompt=text, system_prompt=system_prompt)
+                            if Ai.ARLIAI_API_KEY:
+                                summary = await fetch_response(Ai.ARLIAI_API_KEY, text, system_prompt)
                             else:
-                                summary = fetch_response(text, system_prompt)
+                                print("ARLIAI_API_KEY not found!")
                             if summary:
                                 await x.edit(f'{summary}')
                             else:
