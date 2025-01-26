@@ -48,6 +48,7 @@ async def extract_youtube_transcript(youtube_url):
         print(f"Error: {e}")
         return "no transcript"
 
+"""
 async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT_ID, auth_token=Ai.CF_API_KEY, model_name="@cf/meta/llama-3.1-8b-instruct"):
     response = requests.post(
         f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_name}",
@@ -58,7 +59,7 @@ async def get_cfai_response(user_prompt, system_prompt, account_id=Ai.CF_ACCOUNT
         ]}
     )
     return response.json().get('result', {}).get('response')
-
+"""
 def fetch_response(api_key: str, user_prompt: str, system_prompt: str):
     url = "https://api.arliai.com/v1/chat/completions"
     payload = json.dumps({
