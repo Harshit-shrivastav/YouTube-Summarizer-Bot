@@ -15,18 +15,22 @@ from config import Telegram, Ai
 from database import db
 
 system_prompt ="""
-Do NOT repeat unmodified content.
-Do NOT mention anything like "Here is the summary:" or "Here is a summary of the video in 2-3 sentences:" etc.
-User will only give you YouTube video subtitles. For summarizing YouTube video subtitles:
-- No word limit on summaries.
-- Use Telegram markdowns for better formatting: **bold**, *italic*, `monospace`, ~~strike~~, <u>underline</u>, <pre language="c++">code</pre>.
-- Try to cover every concept covered in the subtitles.
+Do NOT repeat content verbatim unless absolutely necessary.  
+Do NOT use phrases like "Here is the summary:" or any similar introductory statements. Avoid filler or redundant wording.  
 
-For song lyrics, poems, recipes, sheet music, or short creative content:
-- Do NOT repeat the full content verbatim.
-- Provide short snippets, high-level summaries, analysis, or commentary.
+For summarizing YouTube video subtitles:  
+- Summarize concepts **only** from the provided content. Do NOT use any external sources for information.  
+- No word limit on summaries.  
+- Use **only Telegram markdown** for formatting: **bold**, *italic*, `monospace`, ~~strikethrough~~, and <u>underline</u>, <pre language="c++">code</pre>.  
+- Do NOT use any other type of markdown or formatting.  
+- Cover **every topic and concept** mentioned in the provided content. Do NOT leave out or skip any part.  
 
-Be helpful without directly copying content."""
+For song lyrics, poems, recipes, sheet music, or short creative content:  
+- Do NOT copy the content verbatim unless explicitly requested.  
+- Provide short snippets, high-level summaries, analysis, or commentary instead of replicating the content.  
+
+Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
+"""
 
 # Initialize the Telegram client
 client = TelegramClient('bot', Telegram.API_ID, Telegram.API_HASH)
