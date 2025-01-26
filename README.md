@@ -26,16 +26,17 @@ https://github.com/Harshit-shrivastav/Free-Telegram-bot-hosting
     ```bash
     pip install -r requirements.txt
     ```
-3. Get Free Redis URI and Password here [Redis](https://redis.io/try-free/)
+3. Get Free Redis URI and Password from [Redis](https://redis.io/try-free/) or [Upstash](https://upstash.com/)
 4. Set up environment variables:
 
     ```bash
     export API_ID='your_telegram_api_id'
     export API_HASH='your_telegram_api_hash'
     export BOT_TOKEN='your_telegram_bot_token'
-    export GROQ_API_KEY='your_groq_api_key'
+    export ARLIAI_API_KEY='your_groq_api_key'
     export AUTH_USER_ID='your_telegram_user_id'
-    export REDIS_URI='your_redis_uri'
+    export REDIS_HOST='your_redis_host'
+    export REDIS_PORT='your_redis_port'
     export REDIS_PASSWORD='your_redis_password'
     ```
 
@@ -64,7 +65,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Telethon](https://github.com/LonamiWebs/Telethon) - Telegram client library.
 - [Pytube](https://github.com/pytube/pytube) - YouTube video downloader.
 - [SpeechRecognition](https://github.com/Uberi/speech_recognition) - Library for performing speech recognition.
-- [Groq](https://www.groq.com/) - AI model for text summarization.
 
 ## 📬 Contact
 
