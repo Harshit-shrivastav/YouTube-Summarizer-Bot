@@ -13,6 +13,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import JSONFormatter
 from config import Telegram, Ai
 from database import db
+from llm import get_duckai_response, get_arliai_response
 
 system_prompt ="""
 Do NOT repeat content verbatim unless absolutely necessary.  
@@ -32,10 +33,8 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
 """
 
-# Initialize the Telegram client
 client = TelegramClient('bot', Telegram.API_ID, Telegram.API_HASH)
 
-# Speech recognizer
 recognizer = sr.Recognizer()
 
 async def extract_youtube_transcript(youtube_url):
@@ -52,30 +51,6 @@ async def extract_youtube_transcript(youtube_url):
     except Exception as e:
         print(f"Error: {e}")
         return "no transcript"
-
-async def fetch_response(api_key: str, user_prompt: str, system_prompt: str):
-    url = "https://api.arliai.com/v1/chat/completions"
-    payload = json.dumps({
-        "model": "Mistral-Nemo-12B-Instruct-2407",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-    })
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f"Bearer {api_key}"
-    }
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=payload) as response:
-            if response.status == 200:
-                try:
-                    response_data = await response.json()
-                    return response_data['choices'][0]['message']['content']
-                except (json.JSONDecodeError, KeyError):
-                    raise Exception("Error decoding API response.")
-            else:
-                raise Exception(f"API Error: {response.status} - {await response.text()}")
 
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
@@ -111,14 +86,18 @@ async def handle_message(event):
                 print("Transcript fetched successfully.")
                 await x.edit('Reading Completed, Summarizing it...')
                 summary = ""
-                if Ai.ARLIAI_API_KEY:
-                    summary = await fetch_response(Ai.ARLIAI_API_KEY, transcript_text, system_prompt)
-                else:
-                    print("Can't Summarize, ARLIAI_API_KEY not found!")
+                try:
+                    summary = get_duckai_response(transcript_text, system_prompt)
+                except Exception as e:
+                    print(e)
+                    if Ai.ARLIAI_API_KEY:
+                        summary = await fetch_response(Ai.ARLIAI_API_KEY, transcript_text, system_prompt)
+                    else:
+                        print("Can't Summarize, ARLIAI_API_KEY not found!")
                 if summary:
-                    await x.edit(f'{summary}')
+                        await x.edit(f'{summary}')
                 else:
-                    await x.edit("Error: Empty or invalid response.")
+                        await x.edit("Error: Empty or invalid response.")
             else:
                 # No transcript available, fallback to audio transcription
                 await x.edit("Failed to read Video, Trying to listen the video's audio...")
@@ -149,10 +128,14 @@ async def handle_message(event):
                             
                             await x.edit('Summarizing it...')
                             summary = ""
-                            if Ai.ARLIAI_API_KEY:
-                                summary = await fetch_response(Ai.ARLIAI_API_KEY, text, system_prompt)
-                            else:
-                                print("ARLIAI_API_KEY not found!")
+                            try:
+                                summary = get_duckai_response(transcript_text, system_prompt)
+                            except Exception as e:
+                                print(e)
+                                if Ai.ARLIAI_API_KEY:
+                                    summary = await fetch_response(Ai.ARLIAI_API_KEY, transcript_text, system_prompt)
+                                else:
+                                    print("Can't Summarize, ARLIAI_API_KEY not found!")
                             if summary:
                                 await x.edit(f'{summary}')
                             else:
