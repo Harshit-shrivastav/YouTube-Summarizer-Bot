@@ -30,7 +30,7 @@ async def get_arliai_response(api_key: str, user_prompt: str, system_prompt: str
 
 
 BASE_URL = "https://api.h-s.site"
-def get_duckai_response(system_prompt, user_prompt):
+def get_duckai_response(user_prompt, system_prompt):
     try:
         try:
             token_response = requests.get(f"{BASE_URL}/v1/get-token")
