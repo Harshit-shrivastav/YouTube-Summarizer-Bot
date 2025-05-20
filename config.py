@@ -10,9 +10,7 @@ class Telegram:
     AUTH_USER_ID = int(os.environ.get('AUTH_USER_ID'))
     
 class Ai:
-    ARLIAI_API_KEY = os.environ.get('ARLIAI_API_KEY')
-    # CF_API_KEY = os.environ.get('CF_API_KEY')
-    # CF_ACCOUNT_ID = os.environ.get('CF_ACCOUNT_ID')
+    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
     
 class Database:
     REDIS_HOST = os.environ.get('REDIS_HOST') # Example: ec2.redns.redis-cloud.com, local-elephant-58690.upstash.io
