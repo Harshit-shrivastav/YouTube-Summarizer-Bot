@@ -33,13 +33,15 @@ https://github.com/Harshit-shrivastav/Free-Telegram-bot-hosting
     export API_ID='your_telegram_api_id'
     export API_HASH='your_telegram_api_hash'
     export BOT_TOKEN='your_telegram_bot_token'
-    export ARLIAI_API_KEY='your_arliai_api_key'
+    export GOOGLE_API_KEY='google-genai_api_key'
     export AUTH_USER_ID='your_telegram_user_id'
     export REDIS_HOST='your_redis_host'
     export REDIS_PORT='your_redis_port'
     export REDIS_PASSWORD='your_redis_password'
     ```
-
+---
+> You can get Google-genai API key from here - [GOOGLE_API_KEY](https://aistudio.google.com/apikey?_gl=1*1ikijsu*_ga*MTM2NzM3ODU0MC4xNzQ3NTg3NTEy*_ga_P1DBVKWT6V*czE3NDc3NDg2NjYkbzQkZzEkdDE3NDc3NDg4MjckajQ1JGwwJGgxNDk1NTE1NTI3JGQ1M05kWER0TVBXVkdkS0Q4Zk4zVmJoNnI4Yi1yY3hoM0tn)
+---
 ## 🛠️ Usage
 
 1. Start the bot:
@@ -65,14 +67,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Telethon](https://github.com/LonamiWebs/Telethon) - Telegram client library.
 - [Pytube](https://github.com/pytube/pytube) - YouTube video downloader.
 - [SpeechRecognition](https://github.com/Uberi/speech_recognition) - Library for performing speech recognition.
-- [ARLI AI](https://www.arliai.com/) - GenAI Api for summarization 
+- [Gemini AI](https://gemini.google.com/) - GenAI Api for summarization 
 
 ## 📬 Contact
 
-For any queries, reach out at [X](https://x.com/asynkronus).
+For any queries, reach out at [telegram](https://telegram.me/fulgentia).
 
 Enjoy summarizing! 🚀
 ## 😊 Follow me
 Your follow is like a virtual high-five. Thanks!
 - [GitHub](https://github.com/Harshit-shrivastav)
-- [X](https://x.com/asynkronus)
