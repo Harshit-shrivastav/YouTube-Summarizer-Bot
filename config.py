@@ -11,8 +11,8 @@ class Telegram:
     
 class Ai:
     API_KEY = os.environ.get('AI_API_KEY')
-    MODEL_NAME = os.environ.get('AI_MODEL_NAME', 'meta-llama/Llama-3-70b-chat-hf')
-    API_URL = os.environ.get('AI_API_URL', 'https://api.together.xyz/v1/chat/completions')
+    MODEL_NAME = os.environ.get('AI_MODEL_NAME', 'gemini-2.5-flash)
+    API_URL = os.environ.get('AI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/openai/')
     
 class Database:
     REDIS_HOST = os.environ.get('REDIS_HOST')
