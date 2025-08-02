@@ -32,10 +32,8 @@ https://github.com/Harshit-shrivastav/Free-Telegram-bot-hosting
 4. Set up environment variables:
 
     ```bash
-    export API_ID='your_telegram_api_id'
-    export API_HASH='your_telegram_api_hash'
     export BOT_TOKEN='your_telegram_bot_token'
-    export GOOGLE_API_KEY='google-genai_api_key'
+    export AI_API_KEY='google-genai_api_key'
     export AUTH_USER_ID='your_telegram_user_id'
     export REDIS_HOST='your_redis_host'
     export REDIS_PORT='your_redis_port'
