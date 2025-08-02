@@ -1,4 +1,4 @@
-telethon
+aiogram
 SpeechRecognition
 pytube3
 pytube
@@ -6,5 +6,4 @@ pydub
 youtube_transcript_api
 redis
 python-dotenv
-requests 
 aiohttp
