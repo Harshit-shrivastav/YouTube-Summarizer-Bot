@@ -10,9 +10,11 @@ class Telegram:
     AUTH_USER_ID = int(os.environ.get('AUTH_USER_ID'))
     
 class Ai:
-    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+    API_KEY = os.environ.get('AI_API_KEY')
+    MODEL_NAME = os.environ.get('AI_MODEL_NAME', 'meta-llama/Llama-3-70b-chat-hf')
+    API_URL = os.environ.get('AI_API_URL', 'https://api.together.xyz/v1/chat/completions')
     
 class Database:
-    REDIS_HOST = os.environ.get('REDIS_HOST') # Example: ec2.redns.redis-cloud.com, local-elephant-58690.upstash.io
-    REDIS_PORT = int(os.environ.get('REDIS_PORT')) #Example 8080, 47384
+    REDIS_HOST = os.environ.get('REDIS_HOST')
+    REDIS_PORT = int(os.environ.get('REDIS_PORT', '6379'))
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')
