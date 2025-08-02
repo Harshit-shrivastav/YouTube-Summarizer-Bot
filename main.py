@@ -1,11 +1,10 @@
 import os
 import re
 import asyncio
-import requests
-import json
 import aiohttp
-from telethon import TelegramClient, events
-from telethon.tl.custom import Button
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pytube import YouTube
 import speech_recognition as sr
 from pydub import AudioSegment
@@ -31,7 +30,8 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
 """
 
-client = TelegramClient('bot', Telegram.API_ID, Telegram.API_HASH)
+bot = Bot(token=Telegram.BOT_TOKEN)
+dp = Dispatcher()
 recognizer = sr.Recognizer()
 
 async def get_llm_response(prompt):
@@ -69,56 +69,74 @@ async def extract_youtube_transcript(youtube_url):
     except Exception:
         return "no transcript"
 
-@client.on(events.NewMessage(pattern='/start'))
-async def start(event):
-    source_button = Button.url("View Source Code", "https://github.com/Harshit-shrivastav/YouTube-Summarizer-Bot")
-    await event.reply(
+@dp.message(Command("start"))
+async def start_command(message: types.Message):
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="View Source Code",
+        url="https://github.com/Harshit-shrivastav/YouTube-Summarizer-Bot"
+    ))
+    await message.answer(
         'Send me a YouTube link, and I will summarize that video for you in text format.',
-        buttons=source_button
+        reply_markup=builder.as_markup()
     )
-    if not await db.is_inserted("users", int(event.sender_id)):
-        await db.insert("users", int(event.sender_id))
+    if not await db.is_inserted("users", message.from_user.id):
+        await db.insert("users", message.from_user.id)
 
-@client.on(events.NewMessage(pattern='/users', from_users=Telegram.AUTH_USER_ID))
-async def users(event):
+@dp.message(Command("users"))
+async def users_command(message: types.Message):
+    if message.from_user.id != Telegram.AUTH_USER_ID:
+        return
     try:
         users = len(await db.fetch_all("users"))
-        await event.reply(f'Total Users: {users}')
+        await message.answer(f'Total Users: {users}')
     except Exception:
         pass
 
-@client.on(events.NewMessage(func=lambda e: e.is_private and not e.text.startswith('/'), pattern=r'(?!^/).*'))
-async def handle_message(event):
-    url = event.message.message
-    if 'youtube.com' in url or 'youtu.be' in url:
-        x = await event.reply('Reading the video...')
-        transcript_text = await extract_youtube_transcript(url)
-        if transcript_text != "no transcript":
-            await x.edit('Reading Completed, Summarizing it...')
-            summary = await get_llm_response(transcript_text)
-            if summary:
-                await x.edit(summary)
-            else:
-                await x.edit("Error: Empty or invalid response.")
-        else:
-            await x.edit("No transcript available for this video.")
-    else:
-        await event.reply('Please send a valid YouTube link.')
-
-@client.on(events.NewMessage(pattern='/bcast', from_users=Telegram.AUTH_USER_ID))
-async def bcast(event):
-    if not event.reply_to_msg_id:
-        return await event.reply("Please use `/bcast` as a reply to the message you want to broadcast.")
-    msg = await event.get_reply_message()
-    xx = await event.reply("Broadcasting...")
+@dp.message(Command("bcast"))
+async def bcast_command(message: types.Message):
+    if message.from_user.id != Telegram.AUTH_USER_ID:
+        return
+    if not message.reply_to_message:
+        return await message.answer("Please use `/bcast` as a reply to the message you want to broadcast.")
+    
+    msg = message.reply_to_message
+    status_msg = await message.answer("Broadcasting...")
     error_count = 0
     users = await db.fetch_all("users")
+    
     for user in users:
         try:
-            await client.send_message(int(user[0]), msg)
+            await bot.copy_message(
+                chat_id=int(user),
+                from_chat_id=message.chat.id,
+                message_id=msg.message_id
+            )
         except Exception:
             error_count += 1
-    await xx.edit(f"Broadcasted message with {error_count} errors.")
+    
+    await status_msg.edit_text(f"Broadcasted message with {error_count} errors.")
 
-client.start(bot_token=Telegram.BOT_TOKEN)
-client.run_until_disconnected()
+@dp.message()
+async def handle_message(message: types.Message):
+    url = message.text
+    if 'youtube.com' in url or 'youtu.be' in url:
+        status_msg = await message.answer('Reading the video...')
+        transcript_text = await extract_youtube_transcript(url)
+        if transcript_text != "no transcript":
+            await status_msg.edit_text('Reading Completed, Summarizing it...')
+            summary = await get_llm_response(transcript_text)
+            if summary:
+                await status_msg.edit_text(summary)
+            else:
+                await status_msg.edit_text("Error: Empty or invalid response.")
+        else:
+            await status_msg.edit_text("No transcript available for this video.")
+    else:
+        await message.answer('Please send a valid YouTube link.')
+
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
