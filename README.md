@@ -9,6 +9,8 @@ Welcome to the YouTube Video Summarizer Bot! This bot helps you to get a quick s
 - **🎧 Audio Transcription**: If no captions are available, it will download the audio and transcribe it.
 - **📝 Text Summarization**: Summarizes the transcribed text using advanced AI models.
 - **🤖 Easy to Use**: Simple commands to interact with the bot.
+
+- **OpenAI Compatible**: Use any OpenAI Compatible model.
 ### 🆓 If you want a free bot hosting checkout this article here:
 https://github.com/Harshit-shrivastav/Free-Telegram-bot-hosting
 ## 🔧 Installation
@@ -71,7 +73,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-For any queries, reach out at [telegram](https://telegram.me/fulgentia).
+For any queries, reach out at [telegram](https://telegram.me/izharshit).
 
 Enjoy summarizing! 🚀
 ## 😊 Follow me
