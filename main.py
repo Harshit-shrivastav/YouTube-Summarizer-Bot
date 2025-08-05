@@ -247,6 +247,12 @@ async def bcast_command(message: types.Message):
             error_count += 1
     await status_msg.edit_text(f"Broadcasted message with {error_count} errors.")
 
+def escape_markdown_v2(text: str) -> str:
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    for char in escape_chars:
+        text = text.replace(char, f'\\{char}')
+    return text
+
 @dp.message()
 async def handle_message(message: types.Message):
     url = message.text.strip()
@@ -258,7 +264,8 @@ async def handle_message(message: types.Message):
         else:
             summary = await get_llm_response(transcript_text)
             if summary.strip():
-                await status_msg.edit_text(summary, parse_mode=ParseMode.MARKDOWN)
+                escaped_summary = escape_markdown_v2(summary)
+                await status_msg.edit_text(escaped_summary, parse_mode=ParseMode.MARKDOWN_V2)
             else:
                 await status_msg.edit_text("Could not generate summary.")
     else:
