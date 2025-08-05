@@ -1,63 +1,87 @@
+from typing import List, Union, Optional
 import asyncio
-from redis.asyncio import Redis
-from config import Database
-from typing import List, Union
 
-class RedisClient:
-    def __init__(self, host: str, port: int, password: str):
-        self.db = Redis(
-            host=host,
-            port=port,
-            password=password,
-            ssl=True,
-            decode_responses=True
-        )
+class MemoryStorage:
+    def __init__(self):
+        self.data = {}
 
-    def _s_l(self, text: str) -> List[str]:
-        return text.split(" ")
+    async def is_inserted(self, var: str, id: Union[str, int]) -> bool:
+        return str(id) in self.data.get(var, [])
 
-    def _l_s(self, lst: List[str]) -> str:
-        return " ".join(lst).strip()
-
-    def _ensure_str(self, value: Union[str, int]) -> str:
-        return str(value)
-
-    async def is_inserted(self, var: Union[str, int], id: Union[str, int]) -> bool:
-        try:
-            users = await self.fetch_all(self._ensure_str(var))
-            return self._ensure_str(id) in users
-        except Exception:
-            return False
-
-    async def insert(self, var: Union[str, int], id: Union[str, int]) -> bool:
-        try:
-            var_str = self._ensure_str(var)
-            id_str = self._ensure_str(id)
-            users = await self.fetch_all(var_str)
-            if id_str not in users:
-                users.append(id_str)
-                await self.db.set(var_str, self._l_s(users))
-            return True
-        except Exception:
-            return False
+    async def insert(self, var: str, id: Union[str, int]) -> bool:
+        var = str(var)
+        id = str(id)
+        if var not in self.data:
+            self.data[var] = []
+        if id not in self.data[var]:
+            self.data[var].append(id)
+        return True
 
     async def fetch_all(self, var: str) -> List[str]:
-        try:
-            users = await self.db.get(var)
-            return [] if users is None or users == "" else self._s_l(users)
-        except Exception:
-            return []
+        return self.data.get(var, [])
 
-    async def delete(self, var: Union[str, int], id: Union[str, int]) -> bool:
-        try:
-            var_str = self._ensure_str(var)
-            id_str = self._ensure_str(id)
-            users = await self.fetch_all(var_str)
-            if id_str in users:
-                users.remove(id_str)
-                await self.db.set(var_str, self._l_s(users))
+    async def delete(self, var: str, id: Union[str, int]) -> bool:
+        var = str(var)
+        id = str(id)
+        if var in self.data and id in self.data[var]:
+            self.data[var].remove(id)
+        return True
+
+try:
+    from redis.asyncio import Redis
+    from config import Database
+
+    class RedisClient:
+        def __init__(self, host: str, port: int, password: Optional[str]):
+            self.db = Redis(
+                host=host,
+                port=port,
+                password=password,
+                ssl=True if password else False,
+                decode_responses=True
+            )
+
+        def _s_l(self, text: str) -> List[str]:
+            return text.split(" ") if text else []
+
+        def _l_s(self, lst: List[str]) -> str:
+            return " ".join(lst).strip()
+
+        async def is_inserted(self, var: str, id: Union[str, int]) -> bool:
+            users = await self.fetch_all(var)
+            return str(id) in users
+
+        async def insert(self, var: str, id: Union[str, int]) -> bool:
+            var = str(var)
+            id = str(id)
+            users = await self.fetch_all(var)
+            if id not in users:
+                users.append(id)
+                await self.db.set(var, self._l_s(users))
             return True
-        except Exception:
-            return False
 
-db = RedisClient(Database.REDIS_HOST, Database.REDIS_PORT, Database.REDIS_PASSWORD)
+        async def fetch_all(self, var: str) -> List[str]:
+            users = await self.db.get(var)
+            return self._s_l(users) if users else []
+
+        async def delete(self, var: str, id: Union[str, int]) -> bool:
+            var = str(var)
+            id = str(id)
+            users = await self.fetch_all(var)
+            if id in users:
+                users.remove(id)
+                await self.db.set(var, self._l_s(users))
+            return True
+
+    try:
+        db = RedisClient(
+            host=Database.REDIS_HOST or "localhost",
+            port=Database.REDIS_PORT or 6379,
+            password=Database.REDIS_PASSWORD
+        )
+        asyncio.get_event_loop().run_until_complete(db.fetch_all("test"))
+    except Exception:
+        db = MemoryStorage()
+
+except ImportError:
+    db = MemoryStorage()
