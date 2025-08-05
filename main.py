@@ -10,6 +10,7 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.enums import ParseMode
 from config import Telegram, Ai
 from database import db
 
@@ -257,7 +258,7 @@ async def handle_message(message: types.Message):
         else:
             summary = await get_llm_response(transcript_text)
             if summary.strip():
-                await status_msg.edit_text(summary)
+                await status_msg.edit_text(summary, parse_mode=ParseMode.MARKDOWN)
             else:
                 await status_msg.edit_text("Could not generate summary.")
     else:
