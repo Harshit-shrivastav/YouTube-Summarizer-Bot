@@ -168,15 +168,21 @@ async def download_audio_and_transcribe(youtube_url: str) -> str:
         logging.exception("Audio transcription failed")
         return f"Audio transcription error: {str(e)}"
 
-async def get_llm_response(prompt: str) -> str:
+async def get_llm_response(prompt: str, chat_history: List[Dict] = None) -> str:
+    messages = [
+        {"role": "system", "content": system_prompt}
+    ]
+    
+    if chat_history:
+        messages.extend(chat_history)
+    
+    messages.append({"role": "user", "content": prompt})
+
     if Ai.API_KEY:
         url = Ai.API_URL
         payload = {
             "model": Ai.MODEL_NAME,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
+            "messages": messages,
             "max_tokens": 1500,
             "temperature": 0.7
         }
@@ -189,10 +195,7 @@ async def get_llm_response(prompt: str) -> str:
         url = "https://text.pollinations.ai/openai"
         payload = {
             "model": Ai.MODEL_NAME,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
+            "messages": messages,
             "seed": 101,
             "temperature": 0.7
         }
@@ -215,7 +218,7 @@ async def start_command(message: types.Message):
         url="https://github.com/Harshit-shrivastav/YouTube-Summarizer-Bot"
     ))
     await message.answer(
-        'Send me a YouTube link, and I will summarize that video for you in text format.',
+        'Send me a YouTube link, and I will summarize that video for you in text format.\n\nAfter the summary, you can ask questions about the video content.',
         reply_markup=builder.as_markup()
     )
     if not await db.is_inserted("users", message.from_user.id):
@@ -255,22 +258,46 @@ async def bcast_command(message: types.Message):
 @dp.message()
 async def handle_message(message: types.Message):
     url = message.text.strip()
+    user_id = message.from_user.id
+    
     if 'youtube.com' in url or 'youtu.be' in url:
+        # Reset chat history when a new video is sent
+        await db.reset_chat_history(user_id)
+        
         status_msg = await message.answer('Reading the video...')
         transcript_text = await extract_youtube_transcript(url)
+        
         if "captions xml" in transcript_text.lower() or "no transcript" in transcript_text.lower() or "error" in transcript_text.lower() or "failed" in transcript_text.lower():
             await status_msg.edit_text(transcript_text)
         else:
-            summary = await get_llm_response(transcript_text)
+            await db.add_to_chat_history(user_id, "system", f"Video Transcript: {transcript_text}")
+            summary = await get_llm_response("Please summarize this video content in detail.")
+            await db.add_to_chat_history(user_id, "assistant", summary)
+            
             if summary.strip():
                 await status_msg.edit_text(summary)
             else:
                 await status_msg.edit_text("Could not generate summary.")
     else:
-        await message.answer('Please send a valid YouTube link.')
+        chat_history = await db.get_chat_history(user_id)
+        
+        if not chat_history:
+            await message.answer('Please send a YouTube link first to get started.')
+            return
+            
+        status_msg = await message.answer('Thinking...')
+        await db.add_to_chat_history(user_id, "user", message.text)
+        response = await get_llm_response(message.text, chat_history)
+        await db.add_to_chat_history(user_id, "assistant", response)
+        
+        if response.strip():
+            await status_msg.edit_text(response)
+        else:
+            await status_msg.edit_text("Sorry, I couldn't process your request.")
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+[file content end]
