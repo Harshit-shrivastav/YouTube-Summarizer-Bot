@@ -72,7 +72,7 @@ async def get_llm_response(prompt: str) -> str:
                 return data['choices'][0]['message']['content']
             elif 'message' in data:
                 return data['message']['content']
-            return "Error: Unable to parse AI response"
+            return ""
 
 async def extract_youtube_transcript(youtube_url: str) -> str:
     match = re.search(r"(?<=v=)[^&]+|(?<=youtu\.be/)[^?|\n]+", youtube_url)
@@ -171,15 +171,14 @@ async def handle_message(message: types.Message):
     if 'youtube.com' in url or 'youtu.be' in url:
         status_msg = await message.answer('Reading the video...')
         transcript_text = await extract_youtube_transcript(url)
-        if not transcript_text.lower().startswith("no transcript") and "transcript" not in transcript_text.lower():
-            await status_msg.edit_text('Reading Completed, Summarizing it...')
+        if "captions xml" in transcript_text.lower() or "no transcript" in transcript_text.lower() or "error" in transcript_text.lower():
+            await status_msg.edit_text(transcript_text)
+        else:
             summary = await get_llm_response(transcript_text)
-            if summary:
+            if summary.strip():
                 await status_msg.edit_text(summary)
             else:
-                await status_msg.edit_text("Error: Empty or invalid response.")
-        else:
-            await status_msg.edit_text(transcript_text)
+                await status_msg.edit_text("Could not generate summary.")
     else:
         await message.answer('Please send a valid YouTube link.')
 
