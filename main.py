@@ -2,16 +2,21 @@ import os
 import re
 import asyncio
 import aiohttp
+import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from pytube import YouTube
 import speech_recognition as sr
 from pydub import AudioSegment
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 from config import Telegram, Ai
 from database import db
 
+# ---------- Logging ----------
+logging.basicConfig(level=logging.INFO)
+
+# ---------- Prompt ----------
 system_prompt = """
 Do NOT repeat content verbatim unless absolutely necessary.  
 Do NOT use phrases like "Here is the summary:" or any similar introductory statements. Avoid filler or redundant wording.  
@@ -30,11 +35,13 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
 """
 
+# ---------- Bot / Dispatcher ----------
 bot = Bot(token=Telegram.BOT_TOKEN)
 dp = Dispatcher()
 recognizer = sr.Recognizer()
 
-async def get_llm_response(prompt):
+# ---------- LLM caller ----------
+async def get_llm_response(prompt: str) -> str:
     if Ai.API_KEY:
         url = Ai.API_URL
         payload = {
@@ -62,33 +69,59 @@ async def get_llm_response(prompt):
             "seed": 101,
             "temperature": 0.7
         }
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
             data = await response.json()
-            if 'choices' in data:
+            if 'choices' in data and data['choices']:
                 return data['choices'][0]['message']['content']
             elif 'message' in data:
                 return data['message']['content']
             return "Error: Unable to parse AI response"
 
-async def extract_youtube_transcript(youtube_url):
+# ---------- Transcript fetcher ----------
+async def extract_youtube_transcript(youtube_url: str) -> str:
+    match = re.search(r"(?<=v=)[^&]+|(?<=youtu\.be/)[^?|\n]+", youtube_url)
+    if not match:
+        return "Invalid YouTube URL."
+
+    video_id = match.group(0)
+    preferred_langs = [
+        'en', 'ja', 'ko', 'de', 'fr', 'ru', 'it', 'es',
+        'pl', 'uk', 'nl', 'zh-TW', 'zh-CN', 'zh-Hant', 'zh-Hans'
+    ]
+
     try:
-        video_id_match = re.search(r"(?<=v=)[^&]+|(?<=youtu.be/)[^?|\n]+", youtube_url)
-        video_id = video_id_match.group(0) if video_id_match else None
-        if not video_id:
-            return "no transcript"
         loop = asyncio.get_event_loop()
         transcript_list = await loop.run_in_executor(None, YouTubeTranscriptApi.list_transcripts, video_id)
-        transcript = transcript_list.find_transcript(['en', 'ja', 'ko', 'de', 'fr', 'ru', 'it', 'es', 'pl', 'uk', 'nl', 'zh-TW', 'zh-CN', 'zh-Hant', 'zh-Hans'])
-        transcript_text = ' '.join([item['text'] for item in transcript.fetch()])
-        return transcript_text
-    except Exception:
-        return "no transcript"
 
+        # 1. Attempt preferred languages
+        for lang in preferred_langs:
+            try:
+                transcript = transcript_list.find_transcript([lang])
+                return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+            except NoTranscriptFound:
+                continue
+
+        # 2. Any manually created transcript
+        for transcript in transcript_list:
+            if not transcript.is_generated:
+                return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+
+        # 3. Fallback to first available (generated is OK now)
+        first = transcript_list[0]
+        return ' '.join([chunk['text'] for chunk in first.fetch()])
+
+    except TranscriptsDisabled:
+        return "Transcripts are disabled for this video."
+    except NoTranscriptFound as e:
+        return f"No transcript found: {e}"
+    except Exception as e:
+        logging.exception("Unexpected transcript error")
+        return f"Unexpected error: {e}"
+
+# ---------- Handlers ----------
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     builder = InlineKeyboardBuilder()
@@ -119,12 +152,12 @@ async def bcast_command(message: types.Message):
         return
     if not message.reply_to_message:
         return await message.answer("Please use `/bcast` as a reply to the message you want to broadcast.")
-    
+
     msg = message.reply_to_message
     status_msg = await message.answer("Broadcasting...")
     error_count = 0
     users = await db.fetch_all("users")
-    
+
     for user in users:
         try:
             await bot.copy_message(
@@ -134,16 +167,17 @@ async def bcast_command(message: types.Message):
             )
         except Exception:
             error_count += 1
-    
+
     await status_msg.edit_text(f"Broadcasted message with {error_count} errors.")
 
 @dp.message()
 async def handle_message(message: types.Message):
-    url = message.text
+    url = message.text.strip()
     if 'youtube.com' in url or 'youtu.be' in url:
         status_msg = await message.answer('Reading the video...')
         transcript_text = await extract_youtube_transcript(url)
-        if transcript_text != "no transcript":
+
+        if not transcript_text.lower().startswith("no transcript") and "transcript" not in transcript_text.lower():
             await status_msg.edit_text('Reading Completed, Summarizing it...')
             summary = await get_llm_response(transcript_text)
             if summary:
@@ -151,10 +185,11 @@ async def handle_message(message: types.Message):
             else:
                 await status_msg.edit_text("Error: Empty or invalid response.")
         else:
-            await status_msg.edit_text("No transcript available for this video.")
+            await status_msg.edit_text(transcript_text)
     else:
         await message.answer('Please send a valid YouTube link.')
 
+# ---------- Entrypoint ----------
 async def main():
     await dp.start_polling(bot)
 
