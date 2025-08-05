@@ -30,6 +30,7 @@ For song lyrics, poems, recipes, sheet music, or short creative content:
 - Do NOT copy the content verbatim unless explicitly requested.  
 - Provide short snippets, high-level summaries, analysis, or commentary instead of replicating the content.  
 Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
+ALWAYS reply in English, even if the input is in any language. Regardless of the situation, reply in English, I repeat Always reply in English language only.
 """
 
 bot = Bot(
