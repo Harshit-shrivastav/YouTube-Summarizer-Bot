@@ -3,6 +3,7 @@ import re
 import asyncio
 import aiohttp
 import logging
+from xml.etree.ElementTree import ParseError
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -13,34 +14,27 @@ from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, No
 from config import Telegram, Ai
 from database import db
 
-# ---------- Logging ----------
 logging.basicConfig(level=logging.INFO)
 
-# ---------- Prompt ----------
 system_prompt = """
 Do NOT repeat content verbatim unless absolutely necessary.  
 Do NOT use phrases like "Here is the summary:" or any similar introductory statements. Avoid filler or redundant wording.  
-
 For summarizing YouTube video subtitles:  
 - Summarize concepts **only** from the provided content. Do NOT use any external sources for information.  
 - No word limit on summaries.  
 - Use **only Telegram markdown** for formatting: **bold**, *italic*, `monospace`, ~~strikethrough~~, and <u>underline</u>, <pre language="c++">code</pre>.  
 - Do NOT use any other type of markdown or formatting.  
 - Cover **every topic and concept** mentioned in the provided content. Do NOT leave out or skip any part.  
-
 For song lyrics, poems, recipes, sheet music, or short creative content:  
 - Do NOT copy the content verbatim unless explicitly requested.  
 - Provide short snippets, high-level summaries, analysis, or commentary instead of replicating the content.  
-
 Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
 """
 
-# ---------- Bot / Dispatcher ----------
 bot = Bot(token=Telegram.BOT_TOKEN)
 dp = Dispatcher()
 recognizer = sr.Recognizer()
 
-# ---------- LLM caller ----------
 async def get_llm_response(prompt: str) -> str:
     if Ai.API_KEY:
         url = Ai.API_URL
@@ -80,7 +74,6 @@ async def get_llm_response(prompt: str) -> str:
                 return data['message']['content']
             return "Error: Unable to parse AI response"
 
-# ---------- Transcript fetcher ----------
 async def extract_youtube_transcript(youtube_url: str) -> str:
     match = re.search(r"(?<=v=)[^&]+|(?<=youtu\.be/)[^?|\n]+", youtube_url)
     if not match:
@@ -96,22 +89,28 @@ async def extract_youtube_transcript(youtube_url: str) -> str:
         loop = asyncio.get_event_loop()
         transcript_list = await loop.run_in_executor(None, YouTubeTranscriptApi.list_transcripts, video_id)
 
-        # 1. Attempt preferred languages
         for lang in preferred_langs:
             try:
                 transcript = transcript_list.find_transcript([lang])
-                return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+                try:
+                    return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+                except ParseError:
+                    return "Captions XML is empty or malformed."
             except NoTranscriptFound:
                 continue
 
-        # 2. Any manually created transcript
         for transcript in transcript_list:
             if not transcript.is_generated:
-                return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+                try:
+                    return ' '.join([chunk['text'] for chunk in transcript.fetch()])
+                except ParseError:
+                    return "Captions XML is empty or malformed."
 
-        # 3. Fallback to first available (generated is OK now)
         first = transcript_list[0]
-        return ' '.join([chunk['text'] for chunk in first.fetch()])
+        try:
+            return ' '.join([chunk['text'] for chunk in first.fetch()])
+        except ParseError:
+            return "Captions XML is empty or malformed."
 
     except TranscriptsDisabled:
         return "Transcripts are disabled for this video."
@@ -121,7 +120,6 @@ async def extract_youtube_transcript(youtube_url: str) -> str:
         logging.exception("Unexpected transcript error")
         return f"Unexpected error: {e}"
 
-# ---------- Handlers ----------
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     builder = InlineKeyboardBuilder()
@@ -152,12 +150,10 @@ async def bcast_command(message: types.Message):
         return
     if not message.reply_to_message:
         return await message.answer("Please use `/bcast` as a reply to the message you want to broadcast.")
-
     msg = message.reply_to_message
     status_msg = await message.answer("Broadcasting...")
     error_count = 0
     users = await db.fetch_all("users")
-
     for user in users:
         try:
             await bot.copy_message(
@@ -167,7 +163,6 @@ async def bcast_command(message: types.Message):
             )
         except Exception:
             error_count += 1
-
     await status_msg.edit_text(f"Broadcasted message with {error_count} errors.")
 
 @dp.message()
@@ -176,7 +171,6 @@ async def handle_message(message: types.Message):
     if 'youtube.com' in url or 'youtu.be' in url:
         status_msg = await message.answer('Reading the video...')
         transcript_text = await extract_youtube_transcript(url)
-
         if not transcript_text.lower().startswith("no transcript") and "transcript" not in transcript_text.lower():
             await status_msg.edit_text('Reading Completed, Summarizing it...')
             summary = await get_llm_response(transcript_text)
@@ -189,7 +183,6 @@ async def handle_message(message: types.Message):
     else:
         await message.answer('Please send a valid YouTube link.')
 
-# ---------- Entrypoint ----------
 async def main():
     await dp.start_polling(bot)
 
