@@ -35,25 +35,45 @@ dp = Dispatcher()
 recognizer = sr.Recognizer()
 
 async def get_llm_response(prompt):
-    url = Ai.API_URL
-    payload = {
-        "model": Ai.MODEL_NAME,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 1500,
-        "temperature": 0.7
-    }
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "authorization": f"Bearer {Ai.API_KEY}"
-    }
+    if Ai.API_KEY:
+        url = Ai.API_URL
+        payload = {
+            "model": Ai.MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 1500,
+            "temperature": 0.7
+        }
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "authorization": f"Bearer {Ai.API_KEY}"
+        }
+    else:
+        url = "https://text.pollinations.ai/openai"
+        payload = {
+            "model": Ai.MODEL_NAME,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            "seed": 101,
+            "temperature": 0.7
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload, headers=headers) as response:
             data = await response.json()
-            return data.get('choices', [{}])[0].get('message', {}).get('content', "")
+            if 'choices' in data:
+                return data['choices'][0]['message']['content']
+            elif 'message' in data:
+                return data['message']['content']
+            return "Error: Unable to parse AI response"
 
 async def extract_youtube_transcript(youtube_url):
     try:
