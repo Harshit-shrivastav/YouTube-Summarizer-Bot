@@ -18,19 +18,37 @@ from database import db
 logging.basicConfig(level=logging.INFO)
 
 system_prompt = """
-Do NOT repeat content verbatim unless absolutely necessary.  
-Do NOT use phrases like "Here is the summary:" or any similar introductory statements. Avoid filler or redundant wording.  
-For summarizing YouTube video subtitles:  
-- Summarize concepts **only** from the provided content. Do NOT use any external sources for information.  
-- No word limit on summaries.  
-- Use **only Telegram markdown** for formatting: **bold**, *italic*, `monospace`, ~~strikethrough~~, and <u>underline</u>, <pre language="c++">code</pre>.  
-- Do NOT use any other type of markdown or formatting.  
-- Cover **every topic and concept** mentioned in the provided content. Do NOT leave out or skip any part.  
-For song lyrics, poems, recipes, sheet music, or short creative content:  
-- Do NOT copy the content verbatim unless explicitly requested.  
-- Provide short snippets, high-level summaries, analysis, or commentary instead of replicating the content.  
-Be strictly helpful, concise, and adhere to the above rules. Summarize thoroughly while staying true to the provided content without adding or omitting any topics. Do not use or mention any formatting except Telegram markdown.
-ALWAYS reply in English, even if the input is in any language. Regardless of the situation, reply in English, I repeat Always reply in English language only.
+**Role**: You are a specialized YouTube Video Assistant with two core functions:
+1. **Comprehensive Summarization** - Create thorough, structured summaries of video content
+2. **Contextual Q&A** - Answer questions based strictly on the video's content
+
+**Summary Guidelines**:
+- Create **detailed** summaries covering all key points and concepts
+- Organize content with clear sections when appropriate
+- Include important:
+  * Facts and figures
+  * Arguments and viewpoints
+  * Processes and methodologies
+  * Conclusions and takeaways
+- Use **only Telegram markdown** formatting: 
+  **bold**, *italic*, `code`, ~~strikethrough~~, <u>underline</u>
+- Never use external knowledge - base everything on the provided transcript
+
+**Q&A Guidelines**:
+- Maintain perfect consistency with the video content
+- For unclear questions, ask for clarification while suggesting possible interpretations
+- When appropriate, reference specific timestamps from the video (if available)
+- For technical content, provide clear explanations with examples from the transcript
+- Admit when information isn't available in the video
+
+**General Rules**:
+- ALWAYS respond in English, regardless of input language
+- Never claim capabilities beyond the video's content
+- Be concise yet thorough - no fluff or filler text
+- For creative content (music, poetry, etc):
+  * Provide analysis rather than full reproduction
+  * Highlight key themes and techniques
+  * Note significant stylistic elements
 """
 
 bot = Bot(
@@ -210,6 +228,19 @@ async def get_llm_response(prompt: str, chat_history: List[Dict] = None) -> str:
                 return data['message']['content']
             return ""
 
+async def generate_video_response(user_id: int, question: str) -> str:
+    chat_history = await db.get_chat_history(user_id)
+    if not chat_history:
+        return "Please provide a YouTube video first to establish context."
+    
+    enhanced_question = (
+        f"Regarding the video we're discussing: {question}\n"
+        "Important: Only use information from the video transcript/summary. "
+        "If unsure or information isn't available, say so explicitly."
+    )
+    
+    return await get_llm_response(enhanced_question, chat_history)
+
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
     builder = InlineKeyboardBuilder()
@@ -218,7 +249,11 @@ async def start_command(message: types.Message):
         url="https://github.com/Harshit-shrivastav/YouTube-Summarizer-Bot"
     ))
     await message.answer(
-        'Send me a YouTube link, and I will summarize that video for you in text format.\n\nAfter the summary, you can ask questions about the video content.',
+        '📹 **YouTube Video Assistant**\n\n'
+        'Send me a YouTube link and I will:\n'
+        '1. Create a detailed summary of the video\n'
+        '2. Answer any questions about its content\n\n'
+        'The conversation will remain focused on the last video you shared until you send a new one.',
         reply_markup=builder.as_markup()
     )
     if not await db.is_inserted("users", message.from_user.id):
@@ -261,43 +296,52 @@ async def handle_message(message: types.Message):
     user_id = message.from_user.id
     
     if 'youtube.com' in url or 'youtu.be' in url:
-        # Reset chat history when a new video is sent
         await db.reset_chat_history(user_id)
         
-        status_msg = await message.answer('Reading the video...')
+        status_msg = await message.answer('Watching video for you...')
         transcript_text = await extract_youtube_transcript(url)
         
-        if "captions xml" in transcript_text.lower() or "no transcript" in transcript_text.lower() or "error" in transcript_text.lower() or "failed" in transcript_text.lower():
+        if any(error in transcript_text.lower() for error in ["captions xml", "no transcript", "error", "failed"]):
             await status_msg.edit_text(transcript_text)
-        else:
-            await db.add_to_chat_history(user_id, "system", f"Video Transcript: {transcript_text}")
-            summary = await get_llm_response("Please summarize this video content in detail.")
-            await db.add_to_chat_history(user_id, "assistant", summary)
-            
-            if summary.strip():
-                await status_msg.edit_text(summary)
-            else:
-                await status_msg.edit_text("Could not generate summary.")
-    else:
-        chat_history = await db.get_chat_history(user_id)
-        
-        if not chat_history:
-            await message.answer('Please send a YouTube link first to get started.')
             return
             
-        status_msg = await message.answer('Thinking...')
+        await db.add_to_chat_history(user_id, "system", f"Video Transcript:\n{transcript_text}")
+        
+        summary_prompt = (
+            "Create a comprehensive summary with this structure:\n\n"
+            "**Title**: [If available]\n"
+            "**Main Topic**: 1-2 sentence overview\n"
+            "**Key Sections**:\n"
+            "1. [Section 1] - Key points\n"
+            "2. [Section 2] - Key points\n"
+            "   - Sub-points as needed\n"
+            "...\n"
+            "**Notable Details**:\n"
+            "- Important facts/figures\n"
+            "- Surprising findings\n"
+            "- Key quotes\n"
+            "**Conclusions**: Main takeaways\n\n"
+            "Use Telegram markdown formatting."
+        )
+        
+        summary = await get_llm_response(summary_prompt)
+        await db.add_to_chat_history(user_id, "assistant", f"Video Summary:\n{summary}")
+        
+        await status_msg.edit_text(
+            f"🎬 **Video Summary**\n\n{summary}\n\n"
+            "You can now ask questions about this video's content."
+        )
+    else:
+        status_msg = await message.answer('💭 Processing your question...')
+        response = await generate_video_response(user_id, message.text)
+        
         await db.add_to_chat_history(user_id, "user", message.text)
-        response = await get_llm_response(message.text, chat_history)
         await db.add_to_chat_history(user_id, "assistant", response)
         
-        if response.strip():
-            await status_msg.edit_text(response)
-        else:
-            await status_msg.edit_text("Sorry, I couldn't process your request.")
+        await status_msg.edit_text(response if response.strip() else "❌ Couldn't generate a response.")
 
 async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
-[file content end]
