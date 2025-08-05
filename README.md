@@ -35,9 +35,9 @@ https://github.com/Harshit-shrivastav/Free-Telegram-bot-hosting
     export BOT_TOKEN='your_telegram_bot_token'
     export AI_API_KEY='google-genai_api_key' #optional
     export AUTH_USER_ID='your_telegram_user_id'
-    export REDIS_HOST='your_redis_host'
-    export REDIS_PORT='your_redis_port'
-    export REDIS_PASSWORD='your_redis_password'
+    export REDIS_HOST='your_redis_host' # optional 
+    export REDIS_PORT='your_redis_port' #optional
+    export REDIS_PASSWORD='your_redis_password' #optional 
     ```
 ---
 > You can get Google-genai API key from here - [GOOGLE_API_KEY](https://aistudio.google.com/apikey?_gl=1*1ikijsu*_ga*MTM2NzM3ODU0MC4xNzQ3NTg3NTEy*_ga_P1DBVKWT6V*czE3NDc3NDg2NjYkbzQkZzEkdDE3NDc3NDg4MjckajQ1JGwwJGgxNDk1NTE1NTI3JGQ1M05kWER0TVBXVkdkS0Q4Zk4zVmJoNnI4Yi1yY3hoM0tn)
