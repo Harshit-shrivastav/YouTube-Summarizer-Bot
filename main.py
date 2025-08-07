@@ -188,7 +188,7 @@ async def get_llm_response(prompt: str) -> str:
     else:
         url = "https://text.pollinations.ai/openai"
         payload = {
-            "model": Ai.MODEL_NAME,
+            "model": "openai",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
