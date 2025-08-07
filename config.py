@@ -9,7 +9,7 @@ class Telegram:
     
 class Ai:
     API_KEY = os.environ.get('AI_API_KEY')
-    MODEL_NAME = os.environ.get('AI_MODEL_NAME', 'openai')
+    MODEL_NAME = os.environ.get('AI_MODEL_NAME', 'gemini-2.0-flash')
     API_URL = os.environ.get('AI_API_URL', 'https://text.pollinations.ai/openai')
     
 class Database:
